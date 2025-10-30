@@ -152,7 +152,6 @@ void Sheet::CacheDisability(Position pos) {
 }
 
 void Sheet::UpdateDependencies(Position pos, const::std::vector<Position>& new_refs) {
-    // 1 раз сохраняю ссылку на множество, чтобы на каждой итерации не пересчитывать хэш и не искать множество в словаре
     CellInterface* cell = GetCell(pos);
     std::vector<Position> dependencies = cell != nullptr
                                         ? cell->GetReferencedCells()
