@@ -72,7 +72,7 @@ public:
     virtual ~Expr() = default;
     virtual void Print(std::ostream& out) const = 0;
     virtual void DoPrintFormula(std::ostream& out, ExprPrecedence precedence) const = 0;
-    virtual double Evaluate(/*добавьте сюда нужные аргументы*/ args) const = 0;
+    virtual double Evaluate(const SheetInterface& sheet) const = 0;
 
     // higher is tighter
     virtual ExprPrecedence GetPrecedence() const = 0;
@@ -142,8 +142,33 @@ public:
         }
     }
 
-    double Evaluate(/*добавьте нужные аргументы*/) const override {
-			// Скопируйте ваше решение из предыдущих уроков.
+    double Evaluate(const SheetInterface& sheet) const override {
+        double result = 0;
+        double left = lhs_->Evaluate(sheet);
+        double right = rhs_->Evaluate(sheet);
+
+        switch (type_) {
+            case Add:
+                result = left + right;
+                break;
+            case Subtract:
+                result = left - right;
+                break;
+            case Multiply:
+                result = left * right;
+                break;
+            case Divide:
+                result = left / right;
+                break;
+            default:
+                assert(false);
+        }
+
+        if (!std::isfinite(result)) {
+            throw FormulaError(FormulaError::Category::Arithmetic);
+        }
+        
+        return result;
     }
 
 private:
@@ -180,8 +205,8 @@ public:
         return EP_UNARY;
     }
 
-    double Evaluate(/*добавьте нужные аргументы*/ args) const override {
-        // Скопируйте ваше решение из предыдущих уроков.
+    double Evaluate(const SheetInterface& sheet) const override {
+        return type_ == UnaryPlus ? operand_->Evaluate(sheet) : -operand_->Evaluate(sheet);
     }
 
 private:
@@ -211,8 +236,33 @@ public:
         return EP_ATOM;
     }
 
-    double Evaluate(/*добавьте нужные аргументы*/ args) const override {
-        // реализуйте метод.
+    double Evaluate(const SheetInterface& sheet) const override {
+        // Пустая строка вернет nullptr.
+        const CellInterface* cell = sheet.GetCell(*cell_);
+        
+        // Пустая строка в формуле равна нулю
+        if (cell == nullptr) {
+            return 0;
+        }
+
+        auto val = cell->GetValue();
+        if (std::holds_alternative<std::string>(val)) {
+            std::string str = std::get<std::string>(val);
+            std::istringstream iss(str);
+
+            double res;
+            if (iss >> res && iss.eof()) { 
+                return res;
+            }
+
+            throw FormulaError(FormulaError::Category::Value);
+        }
+        
+        if (std::holds_alternative<double>(val)) {
+            return std::get<double>(val);
+        }
+
+        throw std::get<FormulaError>(val);
     }
 
 private:
@@ -237,7 +287,7 @@ public:
         return EP_ATOM;
     }
 
-    double Evaluate(/*добавьте нужные аргументы*/ args) const override {
+    double Evaluate(const SheetInterface&) const override {
         return value_;
     }
 
@@ -391,8 +441,8 @@ void FormulaAST::PrintFormula(std::ostream& out) const {
     root_expr_->PrintFormula(out, ASTImpl::EP_ATOM);
 }
 
-double FormulaAST::Execute(/*добавьте нужные аргументы*/ args) const {
-    return root_expr_->Evaluate(/*добавьте нужные аргументы*/ args);
+double FormulaAST::Execute(const SheetInterface& sheet) const {
+    return root_expr_->Evaluate(sheet);
 }
 
 FormulaAST::FormulaAST(std::unique_ptr<ASTImpl::Expr> root_expr, std::forward_list<Position> cells)

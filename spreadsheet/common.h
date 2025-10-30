@@ -7,6 +7,8 @@
 #include <string_view>
 #include <variant>
 #include <vector>
+#include <unordered_map>
+#include <unordered_set>
 
 // Позиция ячейки. Индексация с нуля.
 struct Position {
@@ -26,6 +28,18 @@ struct Position {
     static const Position NONE;
 };
 
+struct PositionHasher {
+    size_t operator()(Position pos) const noexcept {
+        return hasher_(pos.row) * 17 + hasher_(pos.col);
+    }
+
+    std::hash<int> hasher_;
+};
+
+template <typename Val>
+using PositionMap = std::unordered_map<Position, Val, PositionHasher>;
+using PositionSet = std::unordered_set<Position, PositionHasher>;
+
 struct Size {
     int rows = 0;
     int cols = 0;
@@ -37,18 +51,30 @@ struct Size {
 class FormulaError {
 public:
     enum class Category {
-        Ref,    // ссылка на ячейку с некорректной позицией
-        Value,  // ячейка не может быть трактована как число
-        Div0,  // в результате вычисления возникло деление на ноль
+        Ref,            // ссылка на ячейку с некорректной позицией
+        Value,          // ячейка не может быть трактована как число
+        Arithmetic,     // некорректная арифметическая операция
     };
 
-    FormulaError(Category category);
+    FormulaError(Category category) :category_(category) {}
 
-    Category GetCategory() const;
+    Category GetCategory() const {
+        return category_;
+    }
 
-    bool operator==(FormulaError rhs) const;
+    bool operator==(FormulaError rhs) const {
+        return category_ == rhs.category_;
+    }
 
-    std::string_view ToString() const;
+    std::string_view ToString() const {
+        switch (category_)
+        {
+            case Category::Ref: return "#REF!";
+            case Category::Value: return "#VALUE!";
+            case Category::Arithmetic: return "#ARITHM!";
+        }
+        throw std::runtime_error("Unable category FormulaError::Category FormulaError::category_");
+    }
 
 private:
     Category category_;
