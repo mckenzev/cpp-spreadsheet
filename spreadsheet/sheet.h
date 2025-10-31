@@ -9,8 +9,8 @@ public:
 
     void SetCell(Position pos, std::string text) override;
 
-    const CellInterface* GetCell(Position pos) const override;
-    CellInterface* GetCell(Position pos) override;
+    const Cell* GetCell(Position pos) const override;
+    Cell* GetCell(Position pos) override;
 
     void ClearCell(Position pos) override;
 
@@ -21,9 +21,5 @@ public:
 
 
 private:
-    PositionMap<Cell> cells_;               // Не пустые ячейки листа
-    PositionMap<PositionSet> dependents_;   // Кто зависит от ключа
-
-    void CacheDisability(Position pos);
-    void UpdateDependencies(Position pos, const std::vector<Position>& new_refs);
+    PositionMap<Cell> cells_;
 };

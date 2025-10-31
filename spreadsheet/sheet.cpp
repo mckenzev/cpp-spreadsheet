@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <type_traits>
 #include <queue>
 
 #include "cell.h"
@@ -17,37 +18,21 @@ void Sheet::SetCell(Position pos, std::string text) {
         throw InvalidPositionException("Incorrect position");
     }
 
-    // Обработка пустого текста
-    if (text.empty()) {
-        ClearCell(pos);
-        return;
-    }
-
-    Cell new_cell(*this, pos);
-    new_cell.Set(std::move(text));
-
-    if (auto old_cell = cells_.find(pos); old_cell != cells_.end()) {
-        // Одинаковые данные не нуждаются в перезаписи
-        if (new_cell.GetText() == old_cell->second.GetText()) {
-            return;
-        }
-    }
-
-    CacheDisability(pos);
-    UpdateDependencies(pos, new_cell.GetReferencedCells());
-    
     if (auto it = cells_.find(pos); it != cells_.end()) {
-        it->second = std::move(new_cell);
+        it->second.Set(std::move(text));
     } else {
-        cells_.insert({pos, std::move(new_cell)});
+        auto& new_cell = cells_.insert({pos, Cell(*this, pos)}).first->second;
+        new_cell.Set(std::move(text));
     }
 }
 
-const CellInterface* Sheet::GetCell(Position pos) const {
+const Cell* Sheet::GetCell(Position pos) const {
     return const_cast<Sheet*>(this)->GetCell(pos);
 }
 
-CellInterface* Sheet::GetCell(Position pos) {
+Cell* Sheet::GetCell(Position pos) {
+    static_assert(std::is_base_of_v<CellInterface, Cell>);
+
     if (!pos.IsValid()) {
         throw InvalidPositionException("Incorrect position");
     }
@@ -61,14 +46,14 @@ void Sheet::ClearCell(Position pos) {
         throw InvalidPositionException("Incorrect position");
     }
 
-    // Ячейка полностью удаляется, становясь пустой
-    if (auto it = cells_.find(pos); it != cells_.end()) {
-        cells_.erase(it);
+    // Ячейка полностью удаляется только в случа, если на нее никто не ссылается
+    if (auto cell = cells_.find(pos); cell != cells_.end()) {
+        if (!cell->second.IsReferenced()) {
+            cells_.erase(cell);
+        } else {
+            cell->second.Set("");
+        }
     }
-
-    // Инвалидация хранимого вычисления в кеше зависимых ячеек
-    CacheDisability(pos);
-    UpdateDependencies(pos, {});
 }
 
 Size Sheet::GetPrintableSize() const {
@@ -80,8 +65,11 @@ Size Sheet::GetPrintableSize() const {
     int max_col = 0;
 
     for (const auto& [pos, cell] : cells_) {
-        max_row = std::max(max_row, pos.row);
-        max_col = std::max(max_col, pos.col);
+        // В таблице не могут находиться пустые ячейки, на которые никто не ссылается
+        if (!cell.IsEmpty()) {
+            max_row = std::max(max_row, pos.row);
+            max_col = std::max(max_col, pos.col);
+        }
     }
 
     return Size{max_row + 1, max_col + 1};
@@ -124,47 +112,6 @@ void Sheet::PrintTexts(std::ostream& output) const {
             }
         }
         output << '\n';
-    }
-}
-
-void Sheet::CacheDisability(Position pos) {
-    PositionSet visits;
-    std::queue<Position> queue;
-    
-    visits.insert(pos);
-    queue.push(pos);
-
-    while (!queue.empty()) {
-        Position cur_pos = queue.front();
-        queue.pop();
-
-        if (auto cur_cell = cells_.find(cur_pos); cur_cell != cells_.end()) {
-            cur_cell->second.CacheDisability();
-        }
-
-        for (Position ref : dependents_[cur_pos]) {
-            if (!visits.count(ref)) {
-                visits.insert(ref);
-                queue.push(ref);
-            }
-        }
-    }
-}
-
-void Sheet::UpdateDependencies(Position pos, const::std::vector<Position>& new_refs) {
-    CellInterface* cell = GetCell(pos);
-    std::vector<Position> dependencies = cell != nullptr
-                                        ? cell->GetReferencedCells()
-                                        : std::vector<Position>();
-    
-    // Удаляется информация о том, что cell ссылался на old_ref
-    for (auto old_ref : dependencies) {
-        dependents_[old_ref].erase(pos);
-    }
-    
-    // Добавляется информация о том, что cell ссылается на new_ref
-    for (auto new_ref : new_refs) {
-        dependents_[new_ref].insert(pos);
     }
 }
 

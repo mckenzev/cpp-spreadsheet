@@ -4,6 +4,7 @@
 #include "formula.h"
 #include "test_runner_p.h"
 
+
 inline std::ostream& operator<<(std::ostream& output, Position pos) {
     return output << "(" << pos.row << ", " << pos.col << ")";
 }
@@ -368,8 +369,7 @@ int main() {
     RUN_TEST(tr, TestEmptyCellTreatedAsZero);
     RUN_TEST(tr, TestFormulaInvalidPosition);
     RUN_TEST(tr, TestPrint);
-    // Тест противоречит требованию задания, пытается из nullptr вызвать метод
-    // RUN_TEST(tr, TestCellReferences);
+    RUN_TEST(tr, TestCellReferences);
     RUN_TEST(tr, TestFormulaIncorrect);
     RUN_TEST(tr, TestCellCircularReferences);
 }

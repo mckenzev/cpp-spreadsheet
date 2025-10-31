@@ -158,6 +158,10 @@ public:
                 result = left * right;
                 break;
             case Divide:
+                if (right == 0) {
+                    throw FormulaError(FormulaError::Category::Arithmetic);
+                }
+                
                 result = left / right;
                 break;
             default:
@@ -248,6 +252,11 @@ public:
         auto val = cell->GetValue();
         if (std::holds_alternative<std::string>(val)) {
             std::string str = std::get<std::string>(val);
+
+            if (str.empty()) {
+                return 0;
+            }
+
             std::istringstream iss(str);
 
             double res;
