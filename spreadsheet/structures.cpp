@@ -11,7 +11,6 @@ const int MAX_POS_LETTER_COUNT = 3;
 
 const Position Position::NONE = {-1, -1};
 
-// Реализуйте методы:
 bool Position::operator==(const Position rhs) const {
     return row == rhs.row && col == rhs.col;
 }
@@ -29,7 +28,7 @@ bool Position::IsValid() const {
 }
 
 namespace {
-    constexpr int BASE = 26; // диапазон [A; Z]
+    constexpr int kBase = 26; // диапазон [A; Z]
 
     char NumToChar(int num) {
         return 'A' + num;
@@ -39,9 +38,9 @@ namespace {
         std::string result;
 
         do {
-            int remains = num % BASE;
+            int remains = num % kBase;
             result += NumToChar(remains);
-            num /= BASE;
+            num /= kBase;
             --num;
         } while (num >= 0);
 
@@ -56,7 +55,7 @@ namespace {
         int result = 0;
 
         for (auto c : str) {
-            result *= BASE;
+            result *= kBase;
             result += CharToNum(c);
         }
 
@@ -82,20 +81,20 @@ Position Position::FromString(std::string_view str) {
         return std::isupper(c);
     });
 
-    // Если указатели на начало и конец равны, значит букв в начале строке нет. Так же если конец букв и строки равны, значит цифр в строке нет
+
     if (letters_begin == letters_end || letters_end == str_end) {
         return Position::NONE;
     }
 
     std::string_view letters(letters_begin, std::distance(letters_begin, letters_end));
 
-    // В теории после букв должны идти цифры, поэтому считаем, что цифры начинаются с конца стркои с буквами
+
     const char* nums_begin = letters_end;
     const char* nums_end = std::find_if_not(nums_begin, str_end, [](unsigned char c) {
         return std::isdigit(c);
     });
 
-    // Если начало цифр равно концу, значит цифр в nums_begin нет, а если конец цифр не равен концу строки, значит кроме цифр еще что то есть
+
     if (nums_begin == nums_end || nums_end != str_end) {
         return Position::NONE;
     }

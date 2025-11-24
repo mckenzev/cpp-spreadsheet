@@ -25,7 +25,6 @@ FormulaAST TryParseFormulaAST(std::string expression) {
 namespace {
 class Formula : public FormulaInterface {
 public:
-// Реализуйте следующие методы:
     explicit Formula(std::string expression)
         : ast_(TryParseFormulaAST(std::move(expression))) {}
 
@@ -45,7 +44,7 @@ public:
 
     std::vector<Position> GetReferencedCells() const override {
         const auto& ref_list = ast_.GetCells();
-        //Список очищается от дубликатов и сортируется
+        // Список очищается от дубликатов и сортируется
         std::set<Position> references(ref_list.begin(), ref_list.end());
         // Формируется вектор
         return {references.begin(), references.end()};

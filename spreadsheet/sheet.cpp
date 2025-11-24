@@ -13,7 +13,6 @@ using namespace std::literals;
 Sheet::~Sheet() {}
 
 void Sheet::SetCell(Position pos, std::string text) {
-    // Валидация позиции
     if (!pos.IsValid()) {
         throw InvalidPositionException("Incorrect position");
     }
@@ -46,7 +45,7 @@ void Sheet::ClearCell(Position pos) {
         throw InvalidPositionException("Incorrect position");
     }
 
-    // Ячейка полностью удаляется только в случа, если на нее никто не ссылается
+    // Ячейка полностью удаляется только в случае, если на нее никто не ссылается
     if (auto cell = cells_.find(pos); cell != cells_.end()) {
         if (!cell->second.IsReferenced()) {
             cells_.erase(cell);

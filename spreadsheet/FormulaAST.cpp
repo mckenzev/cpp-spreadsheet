@@ -59,12 +59,12 @@ enum PrecedenceRule {
 // +(A * B) - always okay (the resulting binary op has the highest grammatic precedence)
 // +(A / B) - always okay (the resulting binary op has the highest grammatic precedence)
 constexpr PrecedenceRule PRECEDENCE_RULES[EP_END][EP_END] = {
-    /* EP_ADD */ {PR_NONE, PR_NONE, PR_NONE, PR_NONE, PR_NONE, PR_NONE},
-    /* EP_SUB */ {PR_RIGHT, PR_RIGHT, PR_NONE, PR_NONE, PR_NONE, PR_NONE},
-    /* EP_MUL */ {PR_BOTH, PR_BOTH, PR_NONE, PR_NONE, PR_NONE, PR_NONE},
-    /* EP_DIV */ {PR_BOTH, PR_BOTH, PR_RIGHT, PR_RIGHT, PR_NONE, PR_NONE},
+    /* EP_ADD */   {PR_NONE, PR_NONE, PR_NONE, PR_NONE, PR_NONE, PR_NONE},
+    /* EP_SUB */   {PR_RIGHT, PR_RIGHT, PR_NONE, PR_NONE, PR_NONE, PR_NONE},
+    /* EP_MUL */   {PR_BOTH, PR_BOTH, PR_NONE, PR_NONE, PR_NONE, PR_NONE},
+    /* EP_DIV */   {PR_BOTH, PR_BOTH, PR_RIGHT, PR_RIGHT, PR_NONE, PR_NONE},
     /* EP_UNARY */ {PR_BOTH, PR_BOTH, PR_NONE, PR_NONE, PR_NONE, PR_NONE},
-    /* EP_ATOM */ {PR_NONE, PR_NONE, PR_NONE, PR_NONE, PR_NONE, PR_NONE},
+    /* EP_ATOM */  {PR_NONE, PR_NONE, PR_NONE, PR_NONE, PR_NONE, PR_NONE},
 };
 
 class Expr {
@@ -241,10 +241,10 @@ public:
     }
 
     double Evaluate(const SheetInterface& sheet) const override {
-        // Пустая строка вернет nullptr.
+        // Пустая ячейка вернет nullptr или указатель на пустую ячейку.
         const CellInterface* cell = sheet.GetCell(*cell_);
         
-        // Пустая строка в формуле равна нулю
+        // Пустая ячейка в формуле равна нулю
         if (cell == nullptr) {
             return 0;
         }

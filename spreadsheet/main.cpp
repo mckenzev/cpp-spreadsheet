@@ -260,7 +260,7 @@ void TestFormulaInvalidPosition() {
             sheet->SetCell("A1"_pos, formula);
             ASSERT(false);
         } catch (const FormulaException&) {
-            // we expect this one
+            
         }
     };
 
